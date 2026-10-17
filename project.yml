@@ -1,0 +1,206 @@
+name: Priva
+options:
+  bundleIdPrefix: com.sanketdesai
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+  xcodeVersion: "26.6"
+  postGenCommand: LANG=en_US.UTF-8 pod install --silent
+
+# Your team, servers and pinned keys: .env → scripts/configure.sh → Config/Secrets.xcconfig (not committed).
+configFiles:
+  Debug: Config/Priva.xcconfig
+  Release: Config/Priva.xcconfig
+
+packages:
+  LiveKitWebRTC:
+    url: https://github.com/livekit/webrtc-xcframework.git
+    exactVersion: 150.7871.02
+  swift-crypto:
+    url: https://github.com/apple/swift-crypto.git
+    exactVersion: 5.0.0
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: "1"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+    CLANG_ENABLE_OBJC_ARC: YES
+    ENABLE_PREVIEWS: YES
+    SWIFT_EMIT_LOC_STRINGS: NO
+  configs:
+    Release:
+      SWIFT_COMPILATION_MODE: wholemodule
+      SWIFT_OPTIMIZATION_LEVEL: -O
+      STRIP_INSTALLED_PRODUCT: YES
+      DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+
+targets:
+  Priva:
+    type: application
+    platform: iOS
+    sources:
+      - path: Priva
+    dependencies:
+      - package: LiveKitWebRTC
+      - package: swift-crypto
+        product: CryptoExtras
+    preBuildScripts:
+      - name: Check configuration
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ -z "${PRIVA_SUPABASE_HOST:-}" ] || [ -z "${PRIVA_RELAY_HOST:-}" ]; then
+            echo "error: Priva isn't configured: cp .env.example .env, fill it in, then run scripts/configure.sh"
+            exit 1
+          fi
+          if [ -f "$SRCROOT/.env" ] && [ "$SRCROOT/.env" -nt "$SRCROOT/Config/Secrets.xcconfig" ]; then
+            echo "error: .env changed since the app was configured: run scripts/configure.sh"
+            exit 1
+          fi
+    entitlements:
+      path: Priva/Resources/Priva.entitlements
+      properties:
+        com.apple.developer.default-data-protection: NSFileProtectionComplete
+        com.apple.developer.icloud-container-identifiers: [iCloud.com.sanketdesai.priva]
+        com.apple.developer.ubiquity-container-identifiers: [iCloud.com.sanketdesai.priva]
+        com.apple.developer.icloud-services: [CloudDocuments]
+    info:
+      path: Priva/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Priva
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: true
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIRequiredDeviceCapabilities: [arm64]
+        UIBackgroundModes: [audio]
+        UIFileSharingEnabled: false
+        LSSupportsOpeningDocumentsInPlace: false
+        # Backups can be AirDropped / opened from Files: iOS copies them into Documents/Inbox,
+        # where "Restore from backup" finds them. Nothing in Priva's own storage is exposed.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.sanketdesai.priva.backup
+            UTTypeDescription: Priva Backup
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [privabackup]
+          # A 24-word key saved as a file (KeyFile): opens only with the password, in Priva on the same Apple Account.
+          - UTTypeIdentifier: com.sanketdesai.priva.key
+            UTTypeDescription: Priva Key
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [privakey]
+        # priva://add/<username>, the code on a profile. It only fills in Find; adding still takes a tap.
+        CFBundleURLTypes:
+          - CFBundleURLName: com.sanketdesai.priva.add
+            CFBundleURLSchemes: [priva]
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Priva Backup
+            LSHandlerRank: Owner
+            LSItemContentTypes: [com.sanketdesai.priva.backup]
+        NSFaceIDUsageDescription: "Priva requires Face ID together with your password to unlock your encrypted vault."
+        NSCameraUsageDescription: "Priva uses the camera for end-to-end encrypted video calls and for scanning friends' codes."
+        NSMicrophoneUsageDescription: "Priva uses the microphone for end-to-end encrypted voice and video calls."
+        NSPhotoLibraryAddUsageDescription: "Priva saves only the photos and videos you choose to your library."
+        NSUbiquitousContainers:
+          iCloud.com.sanketdesai.priva:
+            NSUbiquitousContainerIsDocumentScopePublic: true
+            NSUbiquitousContainerName: Priva
+            NSUbiquitousContainerSupportedFolderLevels: Any
+        # Where abuse reports and support requests go (Settings → Contact support, Report). Required before
+        # release: scripts/launch_check.sh fails while this is empty.
+        PrivaSupportEmail: "hello@jexxa.org"
+        # Your deployment, from .env (PrivaConfig reads these).
+        PrivaSupabaseHost: "$(PRIVA_SUPABASE_HOST)"
+        PrivaSupabasePublishableKey: "$(PRIVA_SUPABASE_PUBLISHABLE_KEY)"
+        PrivaRelayHost: "$(PRIVA_RELAY_HOST)"
+        PrivaTokenKeyID: "$(PRIVA_TOKEN_KEY_ID)"
+        PrivaPassKeyID: "$(PRIVA_PASS_KEY_ID)"
+        # Debug builds only (empty in Release): signs development purchases.
+        PrivaDevPurchaseKey: "$(PRIVA_DEV_PURCHASE_KEY)"
+        NSLocalNetworkUsageDescription: "Priva connects directly to your contacts on the same network for faster, private calls and transfers."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sanketdesai.priva
+        PRODUCT_NAME: Priva
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_TESTABILITY: YES
+        OTHER_LDFLAGS: ["$(inherited)", -ObjC]
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+      configs:
+        Release:
+          ENABLE_TESTABILITY: NO
+
+  PrivaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: PrivaTests
+    dependencies:
+      - target: Priva
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sanketdesai.priva.tests
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Priva.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Priva
+
+  # On-device user journeys with real Face ID. XCUITest drives Priva from outside; it links nothing from the app.
+  PrivaDeviceJourneys:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      # Not in the published source: the folder exists only on the developer's Mac.
+      - path: PrivaDeviceJourneys
+        optional: true
+    dependencies:
+      - target: Priva
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sanketdesai.priva.devicejourneys
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Priva
+        SWIFT_VERSION: "5.0"
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+        SWIFT_STRICT_CONCURRENCY: minimal
+
+schemes:
+  Priva:
+    build:
+      targets:
+        Priva: all
+        PrivaTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - PrivaTests
+    profile:
+      config: Release
+    archive:
+      config: Release
+  PrivaDevice:
+    build:
+      targets:
+        Priva: all
+        PrivaDeviceJourneys: [test]
+    test:
+      config: Debug
+      targets:
+        - PrivaDeviceJourneys

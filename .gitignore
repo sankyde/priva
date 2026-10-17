@@ -1,0 +1,53 @@
+# Your configuration and secrets (copy .env.example to .env)
+.env
+*.env
+.env.*
+!.env.example
+Config/Secrets.xcconfig
+supabase/functions/.env
+supabase/.temp/
+
+# Not published: tests that create accounts on Priva's servers, and the user journeys.
+# They stay on the developer's Mac and run there.
+PrivaTests/Live/
+PrivaDeviceJourneys/
+supabase/functions/tests/live_test.ts
+docs/DEVICE_JOURNEYS.md
+scripts/cross_device.sh
+scripts/device_journeys.sh
+scripts/devices.sh
+scripts/faceid_journeys.sh
+scripts/herd.sh
+scripts/memory_leaks.sh
+scripts/multi_device_journey.sh
+scripts/reinstall_journey.sh
+scripts/restore_showcase.sh
+scripts/sim_peer.sh
+scripts/export_release.sh
+
+# Generated: run `xcodegen generate` (it runs `pod install` too)
+Priva.xcodeproj/
+Priva.xcworkspace/
+Pods/
+
+# Build output
+build/
+DerivedData/
+*.xcresult
+*.log
+.swiftpm/
+.wrangler/
+node_modules/
+docs/audit/shots/
+
+# Server backups and standby keys (the scripts keep them in ~/Priva-server-backups)
+*.enc
+Priva-server-backups/
+
+# Personal notes and editor files
+TRACKER.md
+.DS_Store
+*.xcuserstate
+xcuserdata/
+.vscode/
+.idea/

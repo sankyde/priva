@@ -1,0 +1,31 @@
+// Priva rendezvous: relays the small sealed signals two iPhones exchange to open a direct connection.
+// One Durable Object per topic holds the listening phone's WebSocket (hibernated while idle: no charge);
+// nothing is ever stored. Deploy with scripts/setup_cloudflare.sh (free Workers plan): it reads the account and
+// the secrets from .env and checks wrangler is signed in to that account first.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "priva-rendezvous",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-30",
+  "workers_dev": true,
+  "durable_objects": {
+    "bindings": [{ "name": "TOPIC", "class_name": "Topic" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Topic"] }],
+  // Per client IP: a flood from one host can't spend the free daily quota (100,000 requests).
+  "ratelimits": [
+    { "name": "SEND_LIMIT", "namespace_id": "4401", "simple": { "limit": 600, "period": 60 } },
+    { "name": "CONNECT_LIMIT", "namespace_id": "4402", "simple": { "limit": 300, "period": 60 } },
+    // Per pass: one leaked pass can't be used to flood the relay either.
+    { "name": "PASS_LIMIT", "namespace_id": "4403", "simple": { "limit": 300, "period": 60 } },
+    // TURN credentials: a phone needs one every half hour; 10 a minute is room for retries, not for farming.
+    { "name": "TURN_LIMIT", "namespace_id": "4404", "simple": { "limit": 10, "period": 60 } }
+  ],
+  // Secrets (not in this file; scripts/setup_cloudflare.sh sets them from .env):
+  //   RELAY_PASS_SPKI: the public key Supabase (functions/relay-pass) blind-signs relay passes with; the app pins
+  //                     its key id. Only someone who bought Priva gets passes.
+  //   CF_TURN_KEY_ID, CF_TURN_KEY_API_TOKEN: Cloudflare › Realtime › TURN. Without them /turn answers 204 and
+  //                     phones connect directly (STUN only).
+  // No request logs: the relay keeps nothing about who talked to whom.
+  "observability": { "enabled": false }
+}

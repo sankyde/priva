@@ -1,0 +1,18 @@
+PODS:
+  - Tor/Core (409.12.1)
+  - Tor/CTor-NoLZMA (409.12.1):
+    - Tor/Core
+
+DEPENDENCIES:
+  - Tor/CTor-NoLZMA (~> 409.12)
+
+SPEC REPOS:
+  trunk:
+    - Tor
+
+SPEC CHECKSUMS:
+  Tor: 8ca263483edc41cf8730d3167f90383490f1db44
+
+PODFILE CHECKSUM: 94a04f213a9cd0ca996a10ba9fe9e4d8fa5cace4
+
+COCOAPODS: 1.16.2

@@ -1,0 +1,5 @@
+// Project-wide build settings. Your deployment (team, servers, pinned keys) comes from .env through
+// scripts/configure.sh, which writes Secrets.xcconfig next to this file (not committed).
+#include? "Secrets.xcconfig"
+
+DEVELOPMENT_TEAM = $(PRIVA_TEAM_ID)
