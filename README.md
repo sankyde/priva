@@ -51,6 +51,11 @@ xcodebuild -workspace Priva.xcworkspace -scheme Priva -destination 'platform=iOS
 The tests in `PrivaTests` run offline: encryption, backups, key files, restore and attack checks. They don't need
 an account or any server.
 
+## Support
+
+Questions, problems or a report about someone: email **hello@jexxa.org**. In the app, Settings › Contact support
+writes the email for you. Reports about people are handled within 24 hours.
+
 ## Report a security problem
 
 See [SECURITY.md](SECURITY.md). Please don't open a public issue for it.

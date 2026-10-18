@@ -13,6 +13,7 @@ PrivaTests/Live/
 PrivaDeviceJourneys/
 supabase/functions/tests/live_test.ts
 docs/DEVICE_JOURNEYS.md
+docs/APP_STORE_LISTING.md
 scripts/cross_device.sh
 scripts/device_journeys.sh
 scripts/devices.sh
